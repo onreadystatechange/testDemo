@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <title>Title</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+        }
+        html,body{
+            height:100%;
+            width:100%;
+            overflow-x: hidden;
+        }
+        div{
+            width:100%;
+            height:100%;
+        }
+        div p{
+            width:100%;
+            height:25%;
+        }
+        div p:nth-of-type(1){
+            background:#c33;
+        }
+        div p:nth-of-type(2){
+            background:#333;
+        }
+        div p:nth-of-type(3){
+            background:blue;
+        }
+        div p:nth-of-type(4){
+            background:#0F9E5E;
+        }
+    </style>
+
+</head>
+<body>
+
+    <div>
+        <p class="demo">
+
+        </p>
+        <p class="demo">
+
+        </p>
+        <p class="demo">
+
+        </p>
+        <p class="demo">
+
+        </p>
+    </div>
+    <script>
+        window.onload = function(){
+            var demo = document.getElementsByClassName('demo');
+            console.log(demo)
+            function swipe(element){
+                var istouchmove, starttx, startty;
+                element.addEventListener( 'touchstart', function( e ){
+                    var touches = e.touches[0];
+                    starttx = touches.clientX;
+                    startty = touches.clientY;
+                    istouchmove = false;
+                    console.log(1)
+                }, false );
+                element.addEventListener( 'touchmove', function( e ){
+                    console.log(2)
+                    e.preventDefault();
+                    istouchmove = true;
+                    var tar = e.target;
+                    var touches = e.changedTouches[0],
+                            endtx = touches.clientX,
+                            endty = touches.clientY,
+                            distancex = endtx - starttx
+                            distancey = startty - endty,
+                    tar.style.webkitTransform = 'translateX('+distancex+'px)'
+                }, false );
+                element.addEventListener( 'touchend', function( e ){
+                    if( !istouchmove ){
+                        return;
+                    };
+                    var tar = e.target;
+                    console.log(e);
+                    var touches = e.changedTouches[0],
+                            endtx = touches.clientX,
+                            endty = touches.clientY,
+                            distancex = endtx - starttx
+                            distancey = startty - endty,
+                            isswipe = false;
+                    var width = document.body.clientWidth/2;
+                    if(Math.abs(distancex) > width){
+                        animate(tar,{
+                            opacity:'0'
+                        },function(){
+                            tar.style.display = 'none'
+                        })
+                    }else{
+                        tar.style.webkitTransform = 'translateX('+0+'px)'
+                    }
+
+//                    if( Math.abs(distancex) >= Math.abs(distancey) ){
+//                        if( distancex > 20 ){
+//                            console.log( 'fire swipe left event' );
+//                            isswipe = true;
+//                        }
+//                        else if( distancex < -20 ){
+//                            console.log( 'fire swipe right event' );
+//                            isswipe = true;
+//                        }
+//                    }
+//                    else{
+//                        if( distancey > 20 ){
+//                            console.log( 'fire swipe up event' );
+//                            isswipe = true;
+//                        }
+//                        else if( distancey < -20 ){
+//                            console.log( 'fire swipe down event' );
+//                            isswipe = true;
+//                        }
+//                    }
+//                    if( isswipe ){
+//                        console.log( 'fire swipe event' );
+//                    }
+                }, false );
+            }
+
+            for(var i = 0; i < demo.length; i++){
+                (function(i){
+                    swipe(demo[i])
+                })(i)
+            }
+
+            function animate(obj,attr_json,fn)
+            {
+                //清除定时器，防止函数未执行完而连续操作本函数带来的乱像
+                clearInterval(obj.timer);
+                /*
+                 创建定时器,实现动画效果
+                 */
+                obj.timer=setInterval(function(){
+                    var flag=true;  //清楚定时器的标识
+                    /*遍历并操作json数据集合对象中样式属性和值*/
+                    for(var attr in attr_json){
+                        var current=0;      //盒子原本样式的值
+                        /*如果处理的属性是透明度*/
+                        if(attr=="opacity"){
+                            //因为ie不支持 opacity，返回的是undefined，所以如果不支持就返回默认值0
+                            current=Math.round(parseInt(getStyle(obj,attr)*100))||0;
+                        }else{  //其他属性值
+                            current=parseInt(getStyle(obj,attr));
+                        }
+
+                        //计算 “步长"=（属性目标值-盒子原本样式属性的值）/10；”步长越来越小“
+                        var step=(attr_json[attr]-current)/10;
+                        //因为”步长“有可能除不尽，所以最终可能造成误差，所以根据目标值向上或向下取整
+                        step=step>0?Math.ceil(step):Math.floor(step);
+
+                        //判断操作的属性是否是透明度；
+                        if(attr=="opacity"){
+                            if("opacity" in obj.style){   //如果浏览器支持 ”opacity“  IE6、7、8不支持
+                                //obj.style.opacity=0.4;
+                                obj.style.opacity=(current+step)/100;
+                            }else{   //IE6、7、8支持
+                                // obj.style.filter = alpha(opacity = 30)
+                                obj.style.filter= "alpha(opacity = "+(current + step)* 10+")";
+                            }
+
+                        }//判断操作的属性是否是层级
+                        else if(attr=="zIndex"){
+                            obj.style.zIndex=current+step;
+                        }
+                        //其他属性
+                        else{
+                            obj.style[attr]=(current+step)+"px";
+                        }
+
+                        if(current!=attr_json[attr]){ //如果有一个属性值没达到目标，则不清楚定时器
+                            flag=false;
+                        }
+                    }
+                    if(flag){
+                        clearInterval(obj.timer);  //清除定时器
+                        if(fn){ //如果传入了回调函数则执行回调函数
+                            fn();
+                        }
+                    }
+                },20)
+            }
+
+
+            function getStyle(obj,attr){
+                if(obj.currentStyle){   //兼容方法 支持IE、Opera浏览器的
+                    return obj.currentStyle[attr];
+                }else{                  //符合 w3c标准的写法
+                    return window.getComputedStyle(obj,null)[attr];
+                }
+            }
+
+        }
+    </script>
+</body>
+</html>
